@@ -25,4 +25,4 @@ Alternatively, you just can drag & drop in newer macOSes.
 Shell
 -----
 1. Switch to directory containing this script and the vCards.vcf file
-1. `python strip-images-from-apple-vcard.py --verbose --inputfile Kontakte.vcf`
+1. `python3 strip-images-from-apple-vcard.py --verbose --inputfile Kontakte.vcf`
