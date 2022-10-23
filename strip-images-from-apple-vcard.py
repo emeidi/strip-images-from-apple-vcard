@@ -1,6 +1,18 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import sys
 import os
 import re
+import argparse
+
+def d(msg):
+    #debugFile.write(msg + "\n")
+
+    if verbose == False:
+        return
+
+    print(msg)
 
 def checkArgs():
 	numArgs = len(sys.argv)
@@ -8,78 +20,84 @@ def checkArgs():
 		return False
 	return True
 
-def debugMsg(msg,type='Info'):
-	print(type.upper() + ":")
-	print("    " + msg)
-	print("")
-	
-# ===================================================================
-# CLI
+parser = argparse.ArgumentParser(description='Strips images from an Apple AddressBook.app VCF export for easier uploading to contact directories (e.g. Google Contacts)')
 
-if checkArgs():
-	# Arguments provided on command line - must be a pro!
-	filenameInput = sys.argv[1]
-	filenameOutput = sys.argv[2]
+parser.add_argument('--inputfile', metavar='STRING', help='The input file (.vcf)', required=True)
+parser.add_argument('--outputfile', metavar='STRING', help='The output file', required=False)
+parser.add_argument('--verbose', help='Print debug information', action="store_true", required=False)
+
+args = parser.parse_args()
+
+# Logic to handle command line arguments
+# ======================================================================
+if args.verbose:
+    verbose = True
+    d('Enabling command line verbosity as requested by command line')
 else:
-	filenameInput = raw_input("Input file (.vcf): ")
-	filenameOutput = raw_input("Output file (.vcf): ")
-	print("")
+    verbose = False
+
+filenameInput = args.inputfile
+d('Setting filenameInput to "' + filenameInput + '"')
+
+if args.outputfile:
+    filenameOutput = args.outputfile
+else:
+    filenameOutput = re.sub("(\.[a-z]+)$", ".clean\\1", filenameInput)
+
+d('Setting filenameOutput to "' + filenameOutput + '"')
+#sys.exit(1)
 
 if not os.path.exists(filenameInput):
-	debugMsg("File '" + filenameInput + "' not found",'Error')
+	print("ERROR: File '" + filenameInput + "' not found")
 	sys.exit(1)
 
 if os.path.exists(filenameOutput):
-	answer = raw_input(filenameOutput + " already exists. Overwrite? (y/n)")
-	if answer != 'y':
-		debugMsg("Please rerun this tool and specify an output filename",'Error')
-		sys.exit(1)
-	else:
-		print("")
-	
-debugMsg("Reading '" + filenameInput + "'",'Info')
+	print("ERROR: File '" + filenameOutput + "' already exists")
+	sys.exit(1)
+
+d("Reading '" + filenameInput + "'")
 
 infile = open(filenameInput)
 
 clean = ""
 for line in infile:
 	if re.match('PHOTO',line):
-		debugMsg("Found line starting with PHOTO. Skipping.")
+		d("Found line starting with PHOTO. Skipping.")
 		continue;
-	
+
 	if re.match('\s',line):
-		debugMsg("Found line starting with space. Skipping.")
+		d("Found line starting with space. Skipping.")
 		continue;
-	
+
 	clean += line
 
-debugMsg("Writing " + filenameOutput)
-	
+d("Writing " + filenameOutput)
+
 outfile = open(filenameOutput,"w")
 outfile.write(clean)
 
-debugMsg("Done.")
+d("Done.")
 
 sys.exit(0)
 
 # -------------------------------------------------------------------
 # The following (simpler) approach was found not to work on a 10+ MB
-# .vcf file produced by Apple's Addressbook 
+# .vcf file produced by Apple's Addressbook
 # -------------------------------------------------------------------
 raw = infile.read()
 
-debugMsg("File read (" + str(len(raw)) + " chars). Processing.",'Info')
+d("File read (" + str(len(raw)) + " chars). Processing.")
 
 # re.S = . includes \n, re.M = multiline (allows to use ^ as beginning of line)
 pattern = re.compile('\nPHOTO;.*?=\n',re.S + re.M)
 clean = re.sub(pattern,'\n',raw)
 
-debugMsg("Length before: " + str(len(raw)) + " Length after: " + str(len(clean)))
+d("Length before: " + str(len(raw)) + " Length after: " + str(len(clean)))
 
-debugMsg("Writing " + filenameOutput)
+d("Writing " + filenameOutput)
 outfile = open(filenameOutput,"w")
 outfile.write(clean)
 
-debugMsg("Done.")
+d("Done.")
 
 sys.exit(0)
